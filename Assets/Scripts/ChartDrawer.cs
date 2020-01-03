@@ -9,13 +9,18 @@ public class ChartDrawer: MonoBehaviour
     private List<Node> nodes = new List<Node>();
     private List<ConnectionPoint> selectedPoints = new List<ConnectionPoint>();
     private List<Connection> connections = new List<Connection>();
+    private int selectionGridInt = 0;
+    private string[] selectionStrings = { "Bezier", "Line"};
 
     private void OnGUI()
     {
 
         Event e = Event.current;
-        Debug.Log("Current detected event: " + Event.current);
+   //     Debug.Log("Current detected event: " + Event.current);
         AddNodeButton();
+
+        GUI.Label(new Rect(15, 50, 60, 30), "Connection:", GUIStyle.none);
+        selectionGridInt = GUI.SelectionGrid(new Rect(15, 70, 70, 40), selectionGridInt, selectionStrings, 1);
         DrawNodes();
         DrawConnections();
         DrawConnectionLine(e);
@@ -70,9 +75,9 @@ public class ChartDrawer: MonoBehaviour
 
     private void AddNodeButton()
     {
-        if (GUILayout.Button("Add Node"))
+        if (GUI.Button(new Rect(15, 15, 70, 20), "Add Node"))
         {
-            nodes.Add(new Node(10, 50, 150, 30, OnPointClick));
+            nodes.Add(new Node(100, 100, 150, 100, OnPointClick));
         }
     }
 
@@ -99,18 +104,29 @@ public class ChartDrawer: MonoBehaviour
             Vector2 firstPoint = selectedPoints[0].rect.center;
             Vector2 secondPoint = e.mousePosition;
             Vector2 centerPoint = (firstPoint + secondPoint) / 2f;
-
-            Handles.DrawBezier(
-                firstPoint,
-                secondPoint,
-                new Vector2(centerPoint.x, firstPoint.y),
-                new Vector2(centerPoint.x, secondPoint.y),
-                Color.black,
-                null,
-                2f
-            );
+            DrawOnePointLine(firstPoint, secondPoint, centerPoint);
         }
 
+    }
+
+    private void DrawOnePointLine(Vector2 firstPoint, Vector2 secondPoint, Vector2 centerPoint)
+    {
+        if (selectionGridInt == 1)
+        {
+            Handles.DrawLine(firstPoint, secondPoint);
+        }
+        else
+        {
+            Handles.DrawBezier(
+                   firstPoint,
+                   secondPoint,
+                   new Vector2(centerPoint.x, firstPoint.y),
+                   new Vector2(centerPoint.x, secondPoint.y),
+                   Color.black,
+                   null,
+                   2f
+               );
+        }
     }
 
     private void OnPointClick(ConnectionPoint nodePoint)
@@ -132,7 +148,17 @@ public class ChartDrawer: MonoBehaviour
 
     private void CreateConnection()
     {
-        connections.Add(new Connection(selectedPoints, OnClickRemoveConnection));
+        ConnectionType type;
+        if (selectionGridInt == 1)
+        {
+            type = ConnectionType.Line; 
+        }
+        else
+        {
+            type = ConnectionType.Bezier;
+        }
+
+        connections.Add(new Connection(selectedPoints, type, OnClickRemoveConnection));
     }
 
     private void OnClickRemoveConnection(Connection connection)

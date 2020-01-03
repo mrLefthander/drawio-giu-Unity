@@ -6,17 +6,20 @@ using System;
 public class Node
 {
     public Rect rect;
-    public string title = string.Empty;
-    public string textArea = string.Empty;
+    private string title = string.Empty;
+    private string textArea = string.Empty;
     private bool isDragged = false;
     private bool isEditing = false;
     private bool isHovered = false;
+    private bool isResizing = false;
+
     public bool IsSelected { get; private set; } = false;
     GUIStyle textAreaStyle = new GUIStyle("TextArea");
     GUIStyle labelStyle = new GUIStyle("Label");
 
 
     public List<ConnectionPoint> connectionPoints = new List<ConnectionPoint>();
+    public ResizePoint resizePoint;
 
     public Node(float x, float y, float width, float height, Action<ConnectionPoint> OnClickConnectionPoint)
     {
@@ -29,6 +32,8 @@ public class Node
         connectionPoints.Add(new ConnectionPoint(this, ConnectionPointPosition.Bottom, OnClickConnectionPoint));
         connectionPoints.Add(new ConnectionPoint(this, ConnectionPointPosition.Left, OnClickConnectionPoint));
         connectionPoints.Add(new ConnectionPoint(this, ConnectionPointPosition.Right, OnClickConnectionPoint));
+
+        resizePoint = new ResizePoint(this);
     }
 
     public void Drag(Vector2 delta)
@@ -36,9 +41,38 @@ public class Node
         rect.position += delta;
     }
 
+    private void Resize(Vector2 delta)
+    {
+        Vector2 minSize = new Vector2(50, 50);
+        if(rect.size.x + delta.x >= minSize.x && rect.size.y + delta.y >= minSize.y)
+        {
+            rect.size += delta;
+        }
+        
+    }
+
     public void Draw()
     {
         GUI.Box(rect, title);
+        EditAndShowNodeText();
+        DrawConnectionPoints();
+
+    }
+
+    private void DrawConnectionPoints()
+    {
+        if (isHovered || IsSelected)
+        {
+            resizePoint.Draw();
+            foreach (ConnectionPoint point in connectionPoints)
+            {
+                point.Draw();
+            }
+        }
+    }
+
+    private void EditAndShowNodeText()
+    {
         if (!isEditing)
         {
             GUI.Label(rect, textArea, labelStyle);
@@ -47,14 +81,6 @@ public class Node
         {
             textArea = GUI.TextArea(rect, textArea, textAreaStyle);
         }
-        if (isHovered || IsSelected)
-        {
-            foreach (ConnectionPoint point in connectionPoints)
-            {
-                point.Draw();
-            }
-        }
-        
     }
 
     public void ProcessEvents(Event e)
@@ -89,9 +115,14 @@ public class Node
                     {
                         isEditing = true;
                     }
-                    else if (rect.Contains(e.mousePosition))
+                    else if (rect.Contains(e.mousePosition) && !resizePoint.rect.Contains(e.mousePosition))
                     {
                         isDragged = true;
+                        IsSelected = true;
+                    }
+                    else if (resizePoint.rect.Contains(e.mousePosition))
+                    {
+                        isResizing = true;
                         IsSelected = true;
                     }
                     else if (!rect.Contains(e.mousePosition))
@@ -103,6 +134,7 @@ public class Node
 
                 case EventType.MouseUp:
                     isDragged = false;
+                    isResizing = false;
                     break;
 
                 case EventType.MouseDrag:
@@ -111,9 +143,16 @@ public class Node
                         Drag(e.delta);
                         e.Use();
                     }
+                    else if (isResizing)
+                    {
+                        Resize(e.delta);
+                        e.Use();
+                    }
                     break;
             }
         }
     }
+
+
 }
 

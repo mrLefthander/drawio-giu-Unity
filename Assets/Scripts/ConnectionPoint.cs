@@ -13,7 +13,7 @@ public enum ConnectionPointPosition
 public class ConnectionPoint
 {
     public Rect rect;
-    public ConnectionPointPosition positionOnNode;
+    private ConnectionPointPosition positionOnNode;
     public Node node;
 
     public Action<ConnectionPoint> OnClickConnectionPoint;
