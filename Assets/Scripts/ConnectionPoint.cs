@@ -1,59 +1,80 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using System;
 
 public enum ConnectionPointPosition
 {
-    Top,
-    Bottom,
-    Left,
-    Right,
+  Top,
+  Bottom,
+  Left,
+  Right,
 }
+
 public class ConnectionPoint
 {
-    public Rect rect;
-    private ConnectionPointPosition positionOnNode;
-    public Node node;
+  public Rect Rect;
+  public Node Node;
 
-    public Action<ConnectionPoint> OnClickConnectionPoint;
+  private const float RESIZE_POINT_SIZE = 10f;
 
-    public ConnectionPoint(Node node, ConnectionPointPosition positionOnNode, Action<ConnectionPoint> OnClickConnectionPoint)
+  private readonly Action<ConnectionPoint> _onClickConnectionPoint;
+  private ConnectionPointPosition _positionOnNode;
+  
+  public ConnectionPoint(Node node, ConnectionPointPosition positionOnNode, Action<ConnectionPoint> onClickConnectionPoint)
+  {
+    Node = node;
+    _positionOnNode = positionOnNode;
+    _onClickConnectionPoint = onClickConnectionPoint;
+    Rect = new Rect(0, 0, RESIZE_POINT_SIZE, RESIZE_POINT_SIZE);
+  }
+
+  public void Draw()
+  {
+    switch (_positionOnNode)
     {
-        this.node = node;
-        this.positionOnNode = positionOnNode;
-        this.OnClickConnectionPoint = OnClickConnectionPoint;
-        rect = new Rect(0, 0, 10f, 10f);
+      case ConnectionPointPosition.Top:
+        TopPosition();
+        break;
+
+      case ConnectionPointPosition.Bottom:
+        BottomPosition();
+        break;
+
+      case ConnectionPointPosition.Left:
+        LeftPosition();
+        break;
+
+      case ConnectionPointPosition.Right:
+        RightPosition();
+        break;
     }
 
-    public void Draw()
+    if (GUI.Button(Rect, "", "textarea"))
     {
-        switch (positionOnNode)
-        {
-            case ConnectionPointPosition.Top:
-                rect.position = new Vector2(node.rect.x + node.rect.width / 2, 
-                    node.rect.y - rect.height / 2);
-                break;
-
-            case ConnectionPointPosition.Bottom:
-                rect.position = new Vector2(node.rect.x + node.rect.width / 2, 
-                    node.rect.y + node.rect.height - rect.height / 2);
-                break;
-
-            case ConnectionPointPosition.Left:
-                rect.position = new Vector2(node.rect.x - rect.height / 2, 
-                    node.rect.y + node.rect.height / 2 - rect.width / 2);
-                break;
-
-            case ConnectionPointPosition.Right:
-                rect.position = new Vector2(node.rect.x + node.rect.width - rect.height / 2, 
-                    node.rect.y + node.rect.height / 2 - rect.width / 2);
-                break;
-        }
-
-        if (GUI.Button(rect, "", "textarea"))
-        {
-            OnClickConnectionPoint?.Invoke(this);
-        }
+      _onClickConnectionPoint?.Invoke(this);
     }
+  }
+
+  private void RightPosition()
+  {
+    Rect.position = new Vector2(Node.Rect.x + Node.Rect.width - Rect.height / 2,
+                Node.Rect.y + Node.Rect.height / 2 - Rect.width / 2);
+  }
+
+  private void LeftPosition()
+  {
+    Rect.position = new Vector2(Node.Rect.x - Rect.height / 2,
+        Node.Rect.y + Node.Rect.height / 2 - Rect.width / 2);
+  }
+
+  private void BottomPosition()
+  {
+    Rect.position = new Vector2(Node.Rect.x + Node.Rect.width / 2,
+                Node.Rect.y + Node.Rect.height - Rect.height / 2);
+  }
+
+  private void TopPosition()
+  {
+    Rect.position = new Vector2(Node.Rect.x + Node.Rect.width / 2,
+                Node.Rect.y - Rect.height / 2);
+  }
 }

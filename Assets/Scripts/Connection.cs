@@ -5,69 +5,76 @@ using UnityEditor;
 
 public enum ConnectionType
 {
-    Bezier,
-    Line,
+  Bezier,
+  Line,
 }
 public class Connection
 {
-    public Action<Connection> OnClickRemoveConnection;
-    private ConnectionType type;
-    public ConnectionPoint FirstPoint { get; }
-    public ConnectionPoint SecondPoint { get; }
-    private Vector2 centerPoint;
+  public ConnectionPoint FirstPoint { get; }
+  public ConnectionPoint SecondPoint { get; }
 
-    public Connection(List<ConnectionPoint> selectedPoints, ConnectionType type, Action<Connection> OnClickRemoveConnection)
+  private const int BUTTON_SIZE = 4;
+  private const int BUTTON_PICK_SIZE = 8;
+  private const float BEZIER_WIDTH = 2f;
+
+  private Vector2 _centerPoint;
+  private readonly Action<Connection> _onClickRemoveConnection;
+  private readonly ConnectionType _type;
+  private readonly Color _connectionColor = Color.black;
+
+  public Connection(List<ConnectionPoint> selectedPoints, ConnectionType type, Action<Connection> OnClickRemoveConnection)
+  {
+    FirstPoint = selectedPoints[0];
+    SecondPoint = selectedPoints[1];
+    _type = type;
+    _onClickRemoveConnection = OnClickRemoveConnection;
+  }
+
+  public void Draw()
+  {
+    _centerPoint = (FirstPoint.Rect.center + SecondPoint.Rect.center) / 2f;
+    Handles.color = _connectionColor;
+
+    switch (_type)
     {
-        FirstPoint = selectedPoints[0];
-        SecondPoint = selectedPoints[1];
-        this.type = type;
-        this.OnClickRemoveConnection = OnClickRemoveConnection;
+      case ConnectionType.Bezier:
+        DrawBezier();
+        break;
+      case ConnectionType.Line:
+        DrawLine();
+        break;
     }
 
-    public void Draw()
+    DrawRemoveButton();
+  }
+
+  private void DrawBezier()
+  {
+    Handles.DrawBezier(
+        FirstPoint.Rect.center,
+        SecondPoint.Rect.center,
+        new Vector2(_centerPoint.x, FirstPoint.Rect.center.y),
+        new Vector2(_centerPoint.x, SecondPoint.Rect.center.y),
+        _connectionColor,
+        null,
+        BEZIER_WIDTH
+    );
+  }
+
+  private void DrawLine()
+  {
+    Handles.DrawLine(FirstPoint.Rect.center, SecondPoint.Rect.center);
+  }
+
+  private void DrawRemoveButton()
+  {
+    if (!FirstPoint.Node.IsSelected() && !SecondPoint.Node.IsSelected())
     {
-        centerPoint = (FirstPoint.rect.center + SecondPoint.rect.center) / 2f;
-        Handles.color = Color.black;
-
-        switch (type)
-        {
-            case ConnectionType.Bezier:
-                DrawBezier();
-                break;
-            case ConnectionType.Line:
-                DrawLine();
-                break;
-        }
-
-        DrawRemoveButton();
+      return;
     }
-
-    private void DrawBezier()
+    if (Handles.Button(_centerPoint, Quaternion.identity, BUTTON_SIZE, BUTTON_PICK_SIZE, Handles.RectangleHandleCap))
     {
-        Handles.DrawBezier(
-            FirstPoint.rect.center,
-            SecondPoint.rect.center,
-            new Vector2(centerPoint.x, FirstPoint.rect.center.y),
-            new Vector2(centerPoint.x, SecondPoint.rect.center.y),
-            Color.black,
-            null,
-            2f
-        );
+      _onClickRemoveConnection?.Invoke(this);
     }
-
-    private void DrawLine()
-    {
-        Handles.DrawLine(FirstPoint.rect.center, SecondPoint.rect.center);
-    }
-
-    private void DrawRemoveButton()
-    {
-        if (FirstPoint.node.IsSelected || SecondPoint.node.IsSelected)
-        {
-            if (Handles.Button(centerPoint, Quaternion.identity, 4, 8, Handles.RectangleHandleCap))
-            {
-                OnClickRemoveConnection?.Invoke(this);
-            }
-        }
-    }
+  }
 }

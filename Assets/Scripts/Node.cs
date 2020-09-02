@@ -1,158 +1,175 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using System;
 
 public class Node
 {
-    public Rect rect;
-    private string title = string.Empty;
-    private string textArea = string.Empty;
-    private bool isDragged = false;
-    private bool isEditing = false;
-    private bool isHovered = false;
-    private bool isResizing = false;
 
-    public bool IsSelected { get; private set; } = false;
-    GUIStyle textAreaStyle = new GUIStyle("TextArea");
-    GUIStyle labelStyle = new GUIStyle("Label");
+  public Rect Rect;
+  public List<ConnectionPoint> ConnectionPoints = new List<ConnectionPoint>();
+  public ResizePoint ResizePoint;
 
+  private const int DOUBLE_CLICK = 2;
+  private State state;
+  private string _title = string.Empty;
+  private string _textArea = string.Empty;
+  private readonly GUIStyle _textAreaStyle = new GUIStyle("TextArea");
+  private readonly GUIStyle _labelStyle = new GUIStyle("Label");
+  private readonly Vector2 _nodeMinSize = new Vector2(50, 50);
+  private enum State
+  {
+    Idle,
+    Selected,
+    Editing,
+    Hovered,
+    Resizing
+  }
 
-    public List<ConnectionPoint> connectionPoints = new List<ConnectionPoint>();
-    public ResizePoint resizePoint;
+  public Node(Rect nodeRect, Action<ConnectionPoint> onClickConnectionPoint)
+  {
+    Rect = nodeRect;
 
-    public Node(float x, float y, float width, float height, Action<ConnectionPoint> OnClickConnectionPoint)
+    _textAreaStyle.alignment = TextAnchor.MiddleCenter;
+    _labelStyle.alignment = TextAnchor.MiddleCenter;
+
+    ConnectionPoints.Add(new ConnectionPoint(this, ConnectionPointPosition.Top, onClickConnectionPoint));
+    ConnectionPoints.Add(new ConnectionPoint(this, ConnectionPointPosition.Bottom, onClickConnectionPoint));
+    ConnectionPoints.Add(new ConnectionPoint(this, ConnectionPointPosition.Left, onClickConnectionPoint));
+    ConnectionPoints.Add(new ConnectionPoint(this, ConnectionPointPosition.Right, onClickConnectionPoint));
+
+    ResizePoint = new ResizePoint(this);
+    state = State.Idle;
+  }
+
+  private void Drag(Vector2 delta)
+  {
+    Rect.position += delta;
+  }
+
+  private void Resize(Vector2 delta)
+  {
+    if (Rect.size.x + delta.x < _nodeMinSize.x || Rect.size.y + delta.y < _nodeMinSize.y)
     {
-        rect = new Rect(x, y, width, height);
-
-        textAreaStyle.alignment = TextAnchor.MiddleCenter;
-        labelStyle.alignment = TextAnchor.MiddleCenter;
-
-        connectionPoints.Add(new ConnectionPoint(this, ConnectionPointPosition.Top, OnClickConnectionPoint));
-        connectionPoints.Add(new ConnectionPoint(this, ConnectionPointPosition.Bottom, OnClickConnectionPoint));
-        connectionPoints.Add(new ConnectionPoint(this, ConnectionPointPosition.Left, OnClickConnectionPoint));
-        connectionPoints.Add(new ConnectionPoint(this, ConnectionPointPosition.Right, OnClickConnectionPoint));
-
-        resizePoint = new ResizePoint(this);
+      return;
     }
 
-    public void Drag(Vector2 delta)
+    Rect.size += delta;
+  }
+
+  public void Draw()
+  {
+    GUI.Box(Rect, _title);
+    EditAndShowNodeText();
+    DrawConnectionPoints();
+  }
+
+  private void DrawConnectionPoints()
+  {
+    if (!IsSelected())
     {
-        rect.position += delta;
+      return;
+    }  
+
+    foreach (ConnectionPoint point in ConnectionPoints)
+    {
+      point.Draw();
     }
 
-    private void Resize(Vector2 delta)
+    ResizePoint.Draw();
+  }
+
+  private void EditAndShowNodeText()
+  {
+    if (state != State.Editing)
     {
-        Vector2 minSize = new Vector2(50, 50);
-        if(rect.size.x + delta.x >= minSize.x && rect.size.y + delta.y >= minSize.y)
-        {
-            rect.size += delta;
-        }
-        
+      GUI.Label(Rect, _textArea, _labelStyle);
     }
-
-    public void Draw()
+    else
     {
-        GUI.Box(rect, title);
-        EditAndShowNodeText();
-        DrawConnectionPoints();
-
+      _textArea = GUI.TextArea(Rect, _textArea, _textAreaStyle);
     }
+  }
 
-    private void DrawConnectionPoints()
+  public void ProcessEvents(Event e)
+  {
+    ProcessLeftMouseButtonClicks(e);
+    ProcessMouseHover(e);
+  }
+
+  private void ProcessMouseHover(Event e)
+  {
+    foreach (ConnectionPoint point in ConnectionPoints)
     {
-        if (isHovered || IsSelected)
-        {
-            resizePoint.Draw();
-            foreach (ConnectionPoint point in connectionPoints)
-            {
-                point.Draw();
-            }
-        }
+      bool mouseHoverOnNode = point.Rect.Contains(e.mousePosition) || Rect.Contains(e.mousePosition);
+      if (mouseHoverOnNode && state == State.Idle)
+      {
+        state = State.Hovered;
+      }
+      else if (!mouseHoverOnNode && state == State.Hovered)
+      {
+        state = State.Idle;
+      }
     }
+  }
 
-    private void EditAndShowNodeText()
+  private void ProcessLeftMouseButtonClicks(Event e)
+  {
+    if (e.button == 0)
     {
-        if (!isEditing)
-        {
-            GUI.Label(rect, textArea, labelStyle);
-        }
-        else
-        {
-            textArea = GUI.TextArea(rect, textArea, textAreaStyle);
-        }
-    }
+      switch (e.type)
+      {
+        case EventType.MouseDown:
+          ProcessMouseDown(e);
+          break;
 
-    public void ProcessEvents(Event e)
+        case EventType.MouseDrag:
+          ProcessMouseDrag(e);
+          break;
+      }
+    }
+  }
+
+  private void ProcessMouseDrag(Event e)
+  {
+    if (state == State.Selected)
     {
-        ProcessLeftMouseButtonClicks(e);
-        ProcessMouseHover(e);
+      Drag(e.delta);
+      e.Use();
     }
-
-    private void ProcessMouseHover(Event e)
+    else if (state == State.Resizing)
     {
-        foreach(ConnectionPoint point in connectionPoints)
-        {
-            if (point.rect.Contains(e.mousePosition) || rect.Contains(e.mousePosition))
-            {
-                isHovered = true;
-            }
-            else
-            {
-                isHovered = false;
-            }
-        }        
+      Resize(e.delta);
+      e.Use();
     }
+  }
 
-    private void ProcessLeftMouseButtonClicks(Event e)
+  private void ProcessMouseDown(Event e)
+  {
+    if (!Rect.Contains(e.mousePosition))
     {
-        if (e.button == 0)
-        {
-            switch (e.type)
-            {
-                case EventType.MouseDown:
-                    if (rect.Contains(e.mousePosition) && e.clickCount == 2)
-                    {
-                        isEditing = true;
-                    }
-                    else if (rect.Contains(e.mousePosition) && !resizePoint.rect.Contains(e.mousePosition))
-                    {
-                        isDragged = true;
-                        IsSelected = true;
-                    }
-                    else if (resizePoint.rect.Contains(e.mousePosition))
-                    {
-                        isResizing = true;
-                        IsSelected = true;
-                    }
-                    else if (!rect.Contains(e.mousePosition))
-                    {
-                        isEditing = false;
-                        IsSelected = false;
-                    }
-                    break;
-
-                case EventType.MouseUp:
-                    isDragged = false;
-                    isResizing = false;
-                    break;
-
-                case EventType.MouseDrag:
-                    if (isDragged)
-                    {
-                        Drag(e.delta);
-                        e.Use();
-                    }
-                    else if (isResizing)
-                    {
-                        Resize(e.delta);
-                        e.Use();
-                    }
-                    break;
-            }
-        }
+      state = State.Idle;
     }
+    else if (ResizePoint.Rect.Contains(e.mousePosition))
+    {
+      state = State.Resizing;
+    }
+    else if (Rect.Contains(e.mousePosition))
+    {
+      if (e.clickCount == DOUBLE_CLICK)
+      {
+        state = State.Editing;
+      }
+      else if (!ResizePoint.Rect.Contains(e.mousePosition))
+      {
+        state = State.Selected;
+      }
+    }
+  }
 
+  public bool IsSelected()
+  {
+    return state != State.Idle;
+  }
 
 }
 
