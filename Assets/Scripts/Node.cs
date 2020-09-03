@@ -4,18 +4,10 @@ using System;
 
 public class Node
 {
-
   public Rect Rect;
   public List<ConnectionPoint> ConnectionPoints = new List<ConnectionPoint>();
   public ResizePoint ResizePoint;
 
-  private const int DOUBLE_CLICK = 2;
-  private State state;
-  private string _title = string.Empty;
-  private string _textArea = string.Empty;
-  private readonly GUIStyle _textAreaStyle = new GUIStyle("TextArea");
-  private readonly GUIStyle _labelStyle = new GUIStyle("Label");
-  private readonly Vector2 _nodeMinSize = new Vector2(50, 50);
   private enum State
   {
     Idle,
@@ -24,6 +16,14 @@ public class Node
     Hovered,
     Resizing
   }
+
+  private const int DOUBLE_CLICK = 2;
+  private string _title = string.Empty;
+  private string _textArea = string.Empty;
+  private readonly GUIStyle _textAreaStyle = new GUIStyle("TextArea");
+  private readonly GUIStyle _labelStyle = new GUIStyle("Label");
+  private readonly Vector2 _nodeMinSize = new Vector2(50, 50);
+  private State state;
 
   public Node(Rect nodeRect, Action<ConnectionPoint> onClickConnectionPoint)
   {

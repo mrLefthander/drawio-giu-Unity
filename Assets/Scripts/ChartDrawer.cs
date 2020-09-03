@@ -5,25 +5,27 @@ using UnityEditor;
 public class ChartDrawer : MonoBehaviour
 {
   private const int LINE_SELECTION = 1;
+  private const float BEZIER_WIDTH = 2f;
+
+  private int _selectionGridInt = 0;
+  private readonly string[] _selectionStrings = { "Bezier", "Line" };
+  private readonly int _numOfColumns = 1;
+  private readonly Color _connectionColor = Color.black;
   private List<Node> _nodes = new List<Node>();
   private List<ConnectionPoint> _selectedPoints = new List<ConnectionPoint>();
   private List<Connection> _connections = new List<Connection>();
-  private int _selectionGridInt = 0;
-  private readonly string[] _selectionStrings = { "Bezier", "Line" };
-  private readonly Rect _labelRect = new Rect(15, 50, 60, 30);
-  private readonly Rect _selectionGridRect = new Rect(15, 70, 70, 40);
-  private readonly int _numOfColumns = 1;
-  private readonly Rect _nodeInitialRect = new Rect(100, 100, 150, 100);
-  private readonly Rect _addNodeButtonRect = new Rect(15, 15, 70, 20);
-  private readonly Color _connectionColor = Color.black;
+  private readonly GuiRect _labelGuiRect = new GuiRect(15, 50, 60, 30);
+  private readonly GuiRect _selectionGridGuiRect = new GuiRect(15, 70, 70, 40);
+  private readonly GuiRect _nodeInitialGuiRect = new GuiRect(100, 100, 150, 100);
+  private readonly GuiRect _addNodeButtonGuiRect = new GuiRect(15, 15, 70, 20);
 
   private void OnGUI()
   {
     Event e = Event.current;
     AddNodeButton();
 
-    GUI.Label(_labelRect, "Connection:", GUIStyle.none);
-    _selectionGridInt = GUI.SelectionGrid(_selectionGridRect, _selectionGridInt, _selectionStrings, _numOfColumns);
+    GUI.Label(RectFromGuiRect(_labelGuiRect), "Connection:", GUIStyle.none);
+    _selectionGridInt = GUI.SelectionGrid(RectFromGuiRect(_selectionGridGuiRect), _selectionGridInt, _selectionStrings, _numOfColumns);
 
     DrawNodes();
     DrawConnections();
@@ -99,9 +101,9 @@ public class ChartDrawer : MonoBehaviour
 
   private void AddNodeButton()
   {
-    if (GUI.Button(_addNodeButtonRect, "Add Node"))
+    if (GUI.Button(RectFromGuiRect(_addNodeButtonGuiRect), "Add Node"))
     {
-      _nodes.Add(new Node(_nodeInitialRect, OnPointClick));
+      _nodes.Add(new Node(RectFromGuiRect(_nodeInitialGuiRect), OnPointClick));
     }
   }
 
@@ -149,7 +151,7 @@ public class ChartDrawer : MonoBehaviour
              new Vector2(centerPoint.x, secondPoint.y),
              _connectionColor,
              null,
-             2f
+             BEZIER_WIDTH
          );
     }
   }
@@ -182,4 +184,26 @@ public class ChartDrawer : MonoBehaviour
   {
     _connections.Remove(connection);
   }
+
+  private Rect RectFromGuiRect(GuiRect rectModel)
+  {
+    return new Rect(rectModel.X, rectModel.Y, rectModel.Width, rectModel.Height);
+  }
+
+  public class GuiRect
+  {
+    public float X;
+    public float Y;
+    public float Width;
+    public float Height;
+
+    public GuiRect (float x, float y, float width, float height)
+    {
+      X = x;
+      Y = y;
+      Width = width;
+      Height = height;
+    }
+  }
 }
+

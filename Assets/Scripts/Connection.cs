@@ -18,16 +18,16 @@ public class Connection
   private const float BEZIER_WIDTH = 2f;
 
   private Vector2 _centerPoint;
+  private readonly Color _connectionColor = Color.black;
   private readonly Action<Connection> _onClickRemoveConnection;
   private readonly ConnectionType _type;
-  private readonly Color _connectionColor = Color.black;
 
-  public Connection(List<ConnectionPoint> selectedPoints, ConnectionType type, Action<Connection> OnClickRemoveConnection)
+  public Connection(List<ConnectionPoint> selectedPoints, ConnectionType type, Action<Connection> onClickRemoveConnection)
   {
     FirstPoint = selectedPoints[0];
     SecondPoint = selectedPoints[1];
     _type = type;
-    _onClickRemoveConnection = OnClickRemoveConnection;
+    _onClickRemoveConnection = onClickRemoveConnection;
   }
 
   public void Draw()

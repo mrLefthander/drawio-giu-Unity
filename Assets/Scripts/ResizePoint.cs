@@ -2,10 +2,11 @@
 
 public class ResizePoint
 {
+  public Rect Rect;
+
   private const float RESIZE_POINT_SIZE = 10f;
   private const string RESIZE_POINT_BOX_TEXT = "∆";
 
-  public Rect Rect;
   private readonly Node _node;
 
   public ResizePoint(Node node)
