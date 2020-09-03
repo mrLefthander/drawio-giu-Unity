@@ -72,6 +72,7 @@ public class Connection
     {
       return;
     }
+
     if (Handles.Button(_centerPoint, Quaternion.identity, BUTTON_SIZE, BUTTON_PICK_SIZE, Handles.RectangleHandleCap))
     {
       _onClickRemoveConnection?.Invoke(this);

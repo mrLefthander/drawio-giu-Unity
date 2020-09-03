@@ -18,7 +18,7 @@ public class ConnectionPoint
 
   private readonly Action<ConnectionPoint> _onClickConnectionPoint;
   private ConnectionPointPosition _positionOnNode;
-  
+
   public ConnectionPoint(Node node, ConnectionPointPosition positionOnNode, Action<ConnectionPoint> onClickConnectionPoint)
   {
     Node = node;

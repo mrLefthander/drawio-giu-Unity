@@ -68,7 +68,7 @@ public class Node
     if (!IsSelected())
     {
       return;
-    }  
+    }
 
     foreach (ConnectionPoint point in ConnectionPoints)
     {

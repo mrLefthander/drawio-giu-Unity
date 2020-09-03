@@ -7,6 +7,9 @@ public class ChartDrawer : MonoBehaviour
   private const int LINE_SELECTION = 1;
   private const float BEZIER_WIDTH = 2f;
 
+  [SerializeField]
+  private KeyCode deleteButton = KeyCode.Delete;
+
   private int _selectionGridInt = 0;
   private readonly string[] _selectionStrings = { "Bezier", "Line" };
   private readonly int _numOfColumns = 1;
@@ -36,7 +39,7 @@ public class ChartDrawer : MonoBehaviour
 
   private void ProcessNodeDeletion(Event e)
   {
-    if (e.type != EventType.KeyDown || e.keyCode != KeyCode.Delete)
+    if (e.type != EventType.KeyDown || e.keyCode != deleteButton)
     {
       return;
     }
@@ -52,15 +55,14 @@ public class ChartDrawer : MonoBehaviour
 
   private void DeleteNode(Node node)
   {
+    _nodes.Remove(node);
+
     if (_connections.Count <= 0)
     {
-    }
-    else
-    {
-      RemoveNodeConnections(node);
+      return;
     }
 
-    _nodes.Remove(node);
+    RemoveNodeConnections(node);
   }
 
   private void RemoveNodeConnections(Node node)
@@ -159,18 +161,18 @@ public class ChartDrawer : MonoBehaviour
   private void OnPointClick(ConnectionPoint nodePoint)
   {
     _selectedPoints.Add(nodePoint);
-    if (_selectedPoints.Count == 2)
+
+    if (_selectedPoints.Count != 2)
     {
-      if (_selectedPoints[0].Node == _selectedPoints[1].Node)
-      {
-        _selectedPoints.Clear();
-      }
-      else
-      {
-        CreateConnection();
-        _selectedPoints.Clear();
-      }
+      return;
     }
+
+    if (_selectedPoints[0].Node != _selectedPoints[1].Node)
+    {
+      CreateConnection();
+    }
+
+    _selectedPoints.Clear();
   }
 
   private void CreateConnection()
@@ -197,7 +199,7 @@ public class ChartDrawer : MonoBehaviour
     public float Width;
     public float Height;
 
-    public GuiRect (float x, float y, float width, float height)
+    public GuiRect(float x, float y, float width, float height)
     {
       X = x;
       Y = y;
